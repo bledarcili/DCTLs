@@ -1,0 +1,29 @@
+DEFINE_PROPS
+float contrast = 1.15; // Kontrast pak më i fortë se standardi
+float saturation = 1.10; // Ngjyrat më të gjalla
+float highlight_rolloff = 0.90; // Butësi në dritat e forta
+float shadow_tint = 0.01; // Hije pak më të ngrohta
+float blue_boost = 1.05; // Theksim i të kaltërave
+END_PROPS
+
+__DEVICE__ float3 film_curve(float3 color) {
+    color = pow(color, 1.0 / 2.2); // Gamma correction
+    color = color * contrast; // Kontrast
+    color = color * (1.0 - highlight_rolloff) + highlight_rolloff; // Rolloff
+    color = clamp(color, 0.0, 1.0); // Kufizim midis 0 dhe 1
+    return color;
+}
+
+__DEVICE__ float3 ektar_transform(float3 color) {
+    color.r *= 1.10;  // E kuqja pak më e pasur
+    color.g *= 1.02;  // Gjelbërimi pak më neutral
+    color.b *= blue_boost;  // Blu më e theksuar
+    color += shadow_tint; // Nuancë e lehtë në hijet
+    return film_curve(color);
+}
+
+__KERNEL__ void main() {
+    float3 color = make_float3(rgb.r, rgb.g, rgb.b);
+    color = ektar_transform(color);
+    set_rgb(color);
+}
